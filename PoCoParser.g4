@@ -6,6 +6,7 @@
 parser grammar PoCoParser;
 options { tokenVocab=PoCoLexer; }
 
+pocopolicy : vardecls? macrodecls? execution;
 
 ppol:       id LPAREN paramlist RPAREN COLON vardecls macrodecls execution trans|
             id LPAREN paramlist RPAREN COLON vardecls macrodecls execution |
@@ -85,9 +86,9 @@ fieldlist:  SYM COLON re |
 // match had to be split up to eliminate left-recursion
 
 matchs:     BOOLUOP matchs |
-            match BOOLBOP match |
+            matchs BOOLBOP matchs |
             LPAREN matchs RPAREN  |
-            match ;
+            match+ ;
 
 match:      ire |
             AT id LBRACKET LTICK re APOSTROPHE RBRACKET |
