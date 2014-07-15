@@ -6,8 +6,6 @@
 parser grammar PoCoParser;
 options { tokenVocab=PoCoLexer; }
 
-pocopolicy : vardecls? macrodecls? execution;
-
 ppol:       id LPAREN paramlist RPAREN COLON vardecls macrodecls execution trans|
             id LPAREN paramlist RPAREN COLON vardecls macrodecls execution |
             id LPAREN paramlist RPAREN COLON macrodecls execution |
@@ -88,7 +86,7 @@ fieldlist:  SYM COLON re |
 matchs:     BOOLUOP matchs |
             matchs BOOLBOP matchs |
             LPAREN matchs RPAREN  |
-            match+ ;
+            match ;
 
 match:      ire |
             AT id LBRACKET LTICK re APOSTROPHE RBRACKET |
