@@ -39,8 +39,8 @@ vardecls:   vardecl |
 vardecl:    VAR id COLON RETYPE |
             VAR id COLON SRETYPE ;
 
-srecase:    match ARROW sre |
-            srecase BAR match ARROW sre |
+srecase:    matchs ARROW sre |
+            srecase BAR matchs ARROW sre |
             AT id LBRACKET LTICK re APOSTROPHE RBRACKET ;
 
 idlist:     id |
@@ -62,7 +62,7 @@ execution:  exch |
 map:        MAP LPAREN srebop COMMA sre COMMA execution RPAREN |
             MAP LPAREN DOLLAR id COMMA sre COMMA execution RPAREN ;
 
-exch:       OPEN match ARROW sre CLOSE |
+exch:       OPEN matchs ARROW sre CLOSE |
             OPEN INPUTWILD ARROW sre CLOSE |
             DOLLAR id |
             pinst ;
@@ -84,14 +84,16 @@ fieldlist:  SYM COLON re |
 
 // match had to be split up to eliminate left-recursion
 
+matchs:     BOOLUOP matchs |
+            match BOOLBOP match |
+            LPAREN matchs RPAREN  |
+            match ;
+
 match:      ire |
             AT id LBRACKET LTICK re APOSTROPHE RBRACKET |
             SUBSET LPAREN sre COMMA sre RPAREN |
             INFINITE LPAREN sre RPAREN |
-            EQUALS LPAREN sre COMMA sre RPAREN |
-            LPAREN match RPAREN |
-            BOOLUOP match |
-            match BOOLBOP match ;
+            EQUALS LPAREN sre COMMA sre RPAREN ;
 
 
 ire:        ACTION LPAREN LTICK re APOSTROPHE RPAREN |
