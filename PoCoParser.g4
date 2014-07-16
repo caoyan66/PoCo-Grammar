@@ -168,7 +168,8 @@ re:         rewild |
 function:   fxnname LPAREN arglist RPAREN ;
 
 fxnname:    SYM+ |
-            fxnname DOT SYM+ ;
+            object |
+            object SYM+ ;
 
 arglist:    re |
             arglist COMMA re |
