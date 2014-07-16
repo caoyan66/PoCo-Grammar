@@ -165,7 +165,8 @@ re:         rewild |
             re reuop |
             re rebop re ;
 
-function:   fxnname LPAREN arglist RPAREN ;
+function:   fxnname INIT LPAREN arglist RPAREN |
+            fxnname LPAREN arglist RPAREN ;
 
 fxnname:    SYM+ |
             object |
