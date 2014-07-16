@@ -1,0 +1,166 @@
+All of the policys are here except Trywith and NoAccessOtherUserInfo
+Trywith: 		            will be updated
+NoAccessOtherUserInfo:	No more Until Syntax
+
+=================================================================================
+Trivial(): <_ => Neutral>* 
+=================================================================================
+NoOpenClassFiles() : <_ => -`File.<init>(String{%.class})'>*
+=================================================================================
+DisSysCalls() : <_ => -`Runtime.exec(%)'>*  
+=================================================================================
+AllowOnlyMIME() :
+@ports[!`Integer{143|993|25|110|995}'] :RE
+<_ => -`$NetworkConnection($ports)'>*
+=================================================================================
+Attachments() :
+var call: RE
+@ext[`.(exe|vbs|hta|mdb|bad)']  :RE
+@message(call) [`The target is creating a file via: $call. This is a dangerous file type. Do you want to create this file?'] :RE
+map (Union, -`$FileWrite($ext)',
+     <!Action(`$FileWrite($ext)') => Neutral>*
+     < Action(`@call[$FileWrite($ext)]') => +`$Confirm($message($call))'>
+     <!Result(`$Confirm($message($call))', `%') => +`$Confirm($message($call))'>*
+     ( <Result(`$Confirm($message($call))', `#Integer{JOptionPane.OK_OPTION}') => +`$call'>
+              | <_ => Neutral>)
+)*
+=================================================================================
+ConfirmAndAllowOnlyHTTP() :
+var call :RE
+@ports[`Integer{80|443}'] :RE
+@message(call)[`String{The program is attempting to make an HTTP connection via: $call. Do you want to allow this connection?}'] :RE
+map (Union, -`$NetworkConnection($ports)',
+     <!Action(`$NetworkConnection($ports)') => Neutral>* 
+     <Action(`@call[$NetworkConnection($ports)]') => +`$Confirm($message)'>
+     ( <Result(`$Confirm($message)', `#Integer{JOptionPane.OK_OPTION}') => +`$call'>
+               | <_ => Neutral>)
+)*
+=================================================================================
+ClassLoaders() :
+
+var call           : RE
+var exception : RE
+var stacktrace: RE
+map (Union, -`ClassLoader.<init>(%)',
+     <!Action(`ClassLoader.<init>(%)') => Neutral>* 
+     <Action(`@call[ClassLoader.<init>(%)]') => +`Exception.<init>()'>
+     <!(Result(`Exception.<init>()', `%')||Result(`ClassLoader.<init>(%)', `%')) => +`Exception.<init>()'>*
+    (<Result(`ClassLoader.<init>(%)', `%') => Neutral>
+     | <Result(`Exception.<init>()', `@exception[%]') => +`$exception.getStackTrace()'>
+          <!(Result(`$exception.getStackTrace()', `%')||Result(`ClassLoader.<init>(%)', `%'))
+                    => +`$exception.getStackTrace()'>*
+              (<Result(`ClassLoader.<init>(%)', `%') => Neutral>
+              | <Result(`$exception.getStackTrace()', `@stacktrace[%]')
+                        =>  +`IsTrustedPackage($stacktrace)'>
+                   <!(Result(`IsTrustedPackage($stacktrace)', `%')||Result(`ClassLoader.<init>(%)', `%'))
+                             => +`IsTrustedPackage($stacktrace)'>*
+                        (<Result(`ClassLoader.<init>(%)', `%') => Neutral>
+                        | <Result(`IsTrustedPackage($stacktrace)', `Boolean{true}') =>  +`$call'>
+                        | <Result(`IsTrustedPackage($stacktrace)', `Boolean{false}') => Neutral>)))
+)*
+=================================================================================
+IsClientSigned(Policy p1, Policy p2):
+<!Action(`isSigned()') => Union($p2,  +`isSigned()')>*
+  (<Result(`isSigned()', `Boolean{true}')  => $p1>  <_ => $p1>*)
+ |(<Result(`isSigned()', `Boolean{false}') => $p2> <_ => $p2>*)
+=================================================================================
+Audit(Policy p; String f) :
+var act : RE
+var out : RE
+var ps  : RE
+
+<Action(`@act[%]') && @out[`$p'] => +`fopen($f)'>
+<!Result(`fopen($f)', `%') => +`fopen($f)'>* 
+<Result(`fopen($f)', `@ps[%]') => +`log($ps, $out, $act)'>
+<! Result(`log($ps, $out, $act)', `%') => +`log($ps, $out, $act)'>*
+( <!Infinite(Conjunction(Positive($out), Complement(+`$act'))) => $out>
+          | <Subset($out, +`$act') => +`$act'>
+          | <!Infinite(Positive(Results($out))) => $out>
+          | <!Subset($out, -`$act') && !Subset($out, +`$act') => +`$act'>
+          | <_ => $out>
+     <Result(`%', `%') => $p>*
+     <Action(`@act[%]')&&@out[`$p'] => +`log($ps, $out, $act)'>
+<!Result(`log($ps, $out, $act)', `%') => +`log($ps, $out, $act)'> )*
+=================================================================================
+InterruptToCheckMem(Double percent; Long interval) :
+
+var first : RE
+var ig    : RE
+var run  : RE
+var totalM : RE
+var maxM : RE
+var decPerc: RE
+var perc :RE
+@msg[`String{More than $percent\% of the memory available to the VM has been consumed}'] :RE
+(<Action(`@first[%]') => + `mail.interrupts.InterruptsGen.<init>($interval)'>
+<!Result(`mail.interrupts.InterruptsGen.<init>($interval)', `%')
+     => + `mail.interrupts.InterruptsGen.<init>($interval)'>*
+<Result(`mail.interrupts.InterruptsGen.<init>($interval)', `@ig[%]') => +`$ig.start()'>
+<!Result(`$ig.start()', `%') => +`$ig.start()'>*
+<Result(`$ig.start()', `%') => +`$first'>
+     (( <Result(`mail.interrupts.InterruptGen.interrupt()', `%') => +`Runtime.getRuntime()'>
+          <!Result(`Runtime.getRuntime()', `%') => +`Runtime.getRuntime()'>*
+          <Result(`%', `@run[%]') => +`$run.totalMemory()' >
+          <!Result(`$run.totalMemory()', `%') => +`$run.totalMemory()'>*
+          <Result(`$run.totalMemory()', `@totalM[%]') => +`$run.maxMemory()'> 
+          <!Result(`$run.maxMemory()', `%') => +`$run.maxMemory()'>*
+          <Result(`$run.maxMemory()', `@maxM[%]') => + `Divide($totalM, $maxM)'>
+          <!Result(`Divide($totalM, $maxM)', `%') => + `Divide($totalM, $maxM)'>*
+          <Result(`Divide($totalM, $maxM)', `@decPerc[%]') => +`Multiply($decPerc, Double{100})'>
+          <!Result(`Multiply($decPerc, Double{100})', `%') => +`Multiply($decPerc, Double{100})'>*
+          <Result(`Multiply($decPerc, Double{100})', `@perc[%]') =>  +`Greater($perc, $maxPercent)'>
+          <!Result(`Greater($perc, $maxPercent)', `%') => +`Greater($perc, $maxPercent)'>*
+          ( <Result(`Greater($perc, $maxPercent)', `Boolean{true}') => +`$Warning($msg)'> 
+               <!Result(`$Warning($msg)', `%') => +`$Warning($msg)'>*
+               <_  => Neutral>* )
+          | <Result(`%', `Boolean{false}') => Neutral> )
+     | <_ => Neutral> )*
+)*
+
+=================================================================================
+OutgoingMail(String ContactInfo) :
+
+var msg: RE
+var content : RE
+map(Union, -`$SendMail(%)',
+     <!Action(`$SendMail(%)') => Neutral >* 
+     <Action(`$SendMail(@msg[%])') => +`log($msg)'>
+     <!(Result(`log($msg)', `%') || Result(`$SendMail(%)', `%')) => +`log($msg)'>* 
+     (<Result(`$SendMail(%)', `%') => Neutral>
+     | <Result(`log($msg)', `%') => +`$Confirm($msg)'>
+          <!(Result(`$Confirm($msg)', `%')||Result(`$SendMail(%)', `%')) => +`$Confirm($msg)'>* 
+          (<Result(`$SendMail(%)', `%') => Neutral>
+          | <Result(`$Confirm($msg)', `!#Integer{JOptionPane.OK_OPTION}') => +`null'>
+          | <Result(`$Confirm($msg)', `#Integer{JOptionPane.OK_OPTION}') =>
+                    +`$msg.AddBCC(String{user@domain})'>
+               <!(Result(`$msg.AddBCC(String{user@domain})', `%')||Result(`$SendMail(%)', `%'))
+                         => +`$msg.AddBCC(String{user@domain})'>*     
+               (<Result(`$SendMail(%)', `%') => Neutral>
+               | <Result(`%', `@msg[%]}') => +`$msg.getContent()'>
+                    <!(Result(`$msg.getContent()', `%')||Result(`$SendMail(%)', `%'))=> +`$msg.getContent()'>* 
+                    <Result(`$msg.getContent()', `@content[%]') => +`strCat($content, $ContactInfo)'>
+                    <!(Result(`strCat($content, $ContactInfo)', `%')||Result(`$SendMail(%)', `%'))
+                         => +`strCat($content, $ContactInfo)'>*
+                    (<Result(`$SendMail(%)', `%') => Neutral>        
+                    | <Result(`strCat($content, $ContactInfo)',`@content[%]') => +`$msg.setContent($content)'>
+                         <!(Result(`$msg.setContent($content)', `%')||Result(`$SendMail(%)', `%'))
+                              => +`$msg.setContent($content)'>*
+                         (<Result(`$SendMail(%)', `%') => Neutral>
+                         | <Result(`$msg.setContent($content)', `@msg[%]') => +`mail.SendMail($msg)'>
+                               <!(Result(`mail.SendMail($msg)', `%') ||Result(`$SendMail(%)', `%'))
+                                    => +`mail.SendMail($msg)'>*
+                               <!Result(`mail.SendMail($msg)', `%') => +`mail.SendMail($msg)'>)))))
+)*
+======================================================================================================
+Reflection() : <_ => -`#Method{\(\%\,\)\*Name\:\%PoCo\%\(\,\%\)\*}.invoke(%)'>*
+======================================================================================================
+IncomingMail() :
+var result : RE
+map (Union,  -`$GetMail | #Message{%}.getSubject()',
+     <!Result(`($GetMail | #Message{%}.getSubject())', `%') => Neutral>* 
+     (<Result(`$GetMail', `@result[%]') => +`log($result)'>
+          <!Result(`log($result)', `%') => +`log($result)'>*)
+     | (<Result(`@message[#Message{%}].getSubject()', `%') => +`spamifySubject($message)'>
+          <!Result(`spamifySubject($message)', `%') => +`spamifySubject($message)'>)
+)* 
+=================================================================================
