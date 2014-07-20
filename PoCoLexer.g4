@@ -56,7 +56,7 @@ EQUALS:     'Equals' ;
 ACTION:     'Action' ;
 RESULT:     'Result' ;
 
-FOLD:       'Fold';
+FOLD:       'fold';
 
 ID:         [a-zA-Z][a-zA-Z0-9_\-]* ;
 
