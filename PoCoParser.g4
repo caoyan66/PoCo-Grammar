@@ -104,8 +104,8 @@ sre:        (PLUS | MINUS) LTICK re APOSTROPHE |
             DOLLAR qid LPAREN RPAREN |
             DOLLAR qid |
             srebop LPAREN sre COMMA sre RPAREN |
-            sreuop LPAREN sre RPAREN
-            ;
+            sreuop LPAREN sre RPAREN           |
+            FOLD LPAREN DOLLAR ID COMMA DOLLAR ID COMMA sre RPAREN;
 
 sreunion:   SREUNION ;
 
