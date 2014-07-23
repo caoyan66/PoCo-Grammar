@@ -6,7 +6,14 @@
 parser grammar PoCoParser;
 options { tokenVocab=PoCoLexer; }
 
-ppol:       id LPAREN paramlist RPAREN COLON vardecls macrodecls execution trans|
+policy:     pimports macrodecls ppol |
+            pimports ppol |
+            macrodecls ppol |
+            ppol ;
+
+ppol:       MAIN LPAREN RPAREN COLON treedefs |
+            id LPAREN RPAREN COLON treedefs |
+            id LPAREN paramlist RPAREN COLON vardecls macrodecls execution trans|
             id LPAREN paramlist RPAREN COLON vardecls macrodecls execution |
             id LPAREN paramlist RPAREN COLON macrodecls execution |
             id LPAREN paramlist RPAREN COLON vardecls execution |
@@ -14,7 +21,25 @@ ppol:       id LPAREN paramlist RPAREN COLON vardecls macrodecls execution trans
             id LPAREN paramlist RPAREN COLON vardecls execution trans|
             id LPAREN paramlist RPAREN COLON execution trans |
             id LPAREN paramlist RPAREN COLON execution ;
-            // TODO: Add support in ppol for Main() syntax.
+
+pimport:    IMPORT id ;
+
+pimports:   pimport |
+            pimports pimport ;
+
+treedef:    TREE id |
+            TREE id EQUALSIGN id LPAREN policyargs RPAREN |
+            TREE id EQUALSIGN srebop LPAREN policyargs RPAREN ;
+
+treedefs:   treedef |
+            treedefs treedef ;
+
+policyarg:  id LPAREN policyargs RPAREN |
+            AT id LBRACKET policyarg RBRACKET ;
+
+policyargs: policyarg |
+            policyargs COMMA policyarg |
+            ;
 
 
 trans:      DOT MAIN DOT ;
