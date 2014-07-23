@@ -190,3 +190,23 @@ map (Union,  -`$GetMail | #Message{%}.getSubject()',
 )*
 
 =================================================================================
+
+import DenyEmails
+import NoOpenPorts
+
+Main():
+tree rootNode = Union(DenyEmails(), NoOpenPorts())
+
+=================================================================================
+
+import Policy1
+import Policy2
+import Policy3
+import Policy4
+
+@ports[`180|190'] : RE
+
+Main():
+tree p2subtree
+tree combo = Policy1(Policy2(Policy3()), @p2subtree[Policy2(Policy4())])
+tree final = Policy1(combo(), p2subtree())
