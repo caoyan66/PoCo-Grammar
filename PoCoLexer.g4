@@ -52,7 +52,7 @@ SRENEG:     'Negative' ;
 
 SUBSET:     'Subset' ;
 INFINITE:   'Infinite' ;
-EQUALS:     'Equals' ;
+EQUAL:     'Equal' ;
 ACTION:     'Action' ;
 RESULT:     'Result' ;
 
