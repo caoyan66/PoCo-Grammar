@@ -93,7 +93,7 @@ match:      ire |
             AT id LBRACKET LTICK re APOSTROPHE RBRACKET |
             SUBSET LPAREN sre COMMA sre RPAREN |
             INFINITE LPAREN sre RPAREN |
-            EQUALS LPAREN sre COMMA sre RPAREN ;
+            EQUAL LPAREN sre COMMA sre RPAREN ;
 
 
 ire:        ACTION LPAREN LTICK re APOSTROPHE RPAREN |
