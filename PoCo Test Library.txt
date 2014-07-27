@@ -190,7 +190,37 @@ map (Union,  -`$GetMail | #Message{%}.getSubject()',
 )*
 
 =================================================================================
+TryWith(Policy p1, Policy p2) :
+(
+    <(Subset($p1(), Neutral) && Subset(Neutral, $p2()))=> $p1()>
+    | <Action(`@in[%]')||Result (`%', `@in[%]') && Equal(+`$in',$p1()) => $p1()>
+    | <Action(`@in[%]')||Result (`%', `@in[%]') &&!Equal(Conjunction($p1(),+`$in'),Neutral) => $p1()>
+    | <_ => $p2()>
+)
+=================================================================================
+Dominates(Policy p1, Policy p2) :
+(<Equal($p1(),Neutral) => $p2()>
+| <_ => $p1()>)*
 
+=================================================================================
+AutoUpdate(Policy p, String jarUrl, int updateType, int updateIncrement, String infoDir):
+
+var in : RE
+var gp : RE
+var p  : RE
+<Action(`@in[%]') || Result(`%', `@in[%]')
+     => + `getPolicy($p, $jarUrl, $updateType, $updateIncrement, $infoDir, $input)'>
+<!Result(`getPolicy($p, $jarUrl, $updateType, $updateIncrement, $infoDir, $input)', `%')
+     => +`getPolicy($p, $jarUrl, $updateType, $updateIncrement, $infoDir, $input)'>*
+<Result(`getPolicy(%)', `@p[\(%\,\)*currentResult\: \@output\[%\]\(\,%\)* ]') => $currentResult>
+(<Action(`@gp[getPolicy($p, $jarUrl, $updateType, $updateIncrement, $infoDir, %)]') => +`$gp'>
+     <!Result(`$gp', `@p[%]') => +`$gp'>* 
+     <Result(`$gp', `@p[%]') => Neutral>
+| <_ => $p()>)* 
+
+=================================================================================
+=========================Example of tree of policies=============================
+=================================================================================
 import DenyEmails
 import NoOpenPorts
 
@@ -210,3 +240,51 @@ Main():
 tree p2subtree
 tree combo = Policy1(Policy2(Policy3()), @p2subtree[Policy2(Policy4())])
 tree final = Policy1(combo(), p2subtree())
+
+================================================================================
+
+import FirstApplicable
+import DenyOverrides
+import PermitOverrides
+import Policy1
+import Policy2
+import Policy3
+import Policy4
+
+Main():
+tree PermitTree = PermitOverrides(Policy3(), Policy4())
+tree DenyTree = DenyOverrides(Policy1(), Policy2())
+tree root = FirstApplicable(PermitTree(), DenyTree())
+
+================================================================================
+
+import ConfirmAndAllowOnlyHTTP
+import AllowOnlyMIME
+import TryWith
+import Attachments
+import Dominates
+import OutgoingMail
+import IncomingMail
+import Trivial
+import IsClientSigned
+import ClassLoaders
+import NoOpenClassFiles
+import Reflection
+import DisSysCalls
+import InterruptToCheckMem
+import Audit
+import AutoUpdate
+
+Main():
+tree DomiLTree1 = Dominates(Reflection(),conjunction(ClassLoaders(), NoOpenClassFiles()))
+tree DomiLTree2 = Dominates(DisSysCalls(), InterruptToCheckMem())
+tree DomiLTree  = Dominates (DomiLTree1(), DomiLTree2())
+
+tree tryTree = TryWith(ConfirmAndAllowOnlyHTTP(), AllowOnlyMIME())
+tree DomiRTree1 = Dominates(tryTree(), Attachments())
+tree DomiRTree2 = Dominates(OutgoingMail(), QuertyCalls(incomingMail()))
+tree DomiRTree3 = Dominates(DomiRTree1(), DomiRTree2())
+tree IsCSignedTree  = IsClientSigned(Trivial(), DomiRTree1())
+
+tree root = Audit (AutoUpdate( conjunction(DomiLTree(), IsCSignedTree() )))
+================================================================================
